@@ -1,0 +1,159 @@
+getgenv().whscript = "Dark Hub"
+getgenv().webhookexecUrl = "https://discord.com/api/webhooks/1363276309064712424/oQNSMuZ0AsXRPEIfb1TEaPMaOO7PGY7i1bV8uFcb4KaSVHL5ExilVqtXJ3bO9gB0hxHC"
+getgenv().ExecLogSecret = true
+
+local ui = gethui()
+local folderName = "screen"
+local folder = Instance.new("Folder")
+folder.Name = folderName
+
+local player = game:GetService("Players").LocalPlayer
+
+if ui:FindFirstChild(folderName) then
+    print("Script is already executed! Rejoin if it's an error!")
+    local folderName2 = "screen2"
+    if ui:FindFirstChild(folderName2) then
+        player:Kick("Anti-spam execution system triggered. Please rejoin to proceed.")
+    else
+        local folder2 = Instance.new("Folder")
+        folder2.Name = folderName2
+        folder2.Parent = gethui()
+    end
+    return
+end
+
+folder.Parent = gethui()
+
+local players = game:GetService("Players")
+local userid = player.UserId
+local gameid = game.PlaceId
+local jobid = tostring(game.JobId)
+local gameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
+local deviceType = game:GetService("UserInputService"):GetPlatform() == Enum.Platform.Windows and "PC" or "Mobile"
+local snipePlay = "game:GetService('TeleportService'):TeleportToPlaceInstance(" .. gameid .. ", '" .. jobid .. "', player)"
+local completeTime = os.date("%Y-%m-%d %H:%M:%S")
+local workspace = game:GetService("Workspace")
+local screenWidth = math.floor(workspace.CurrentCamera.ViewportSize.X)
+local screenHeight = math.floor(workspace.CurrentCamera.ViewportSize.Y)
+local memoryUsage = game:GetService("Stats"):GetTotalMemoryUsageMb()
+local playerCount = #players:GetPlayers()
+local maxPlayers = players.MaxPlayers
+local health = player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health or "N/A"
+local maxHealth = player.Character and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.MaxHealth or "N/A"
+local position = player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character.HumanoidRootPart.Position or "N/A"
+local gameVersion = game.PlaceVersion
+
+if not getgenv().ExecLogSecret then getgenv().ExecLogSecret = false end
+if not getgenv().whscript then getgenv().whscript = "Please provide a script name!" end
+
+task.wait(5)
+
+local pingValue = tonumber(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString():match("(%d+)")) or "N/A"
+
+local function checkPremium()
+    local success, membership = pcall(function()
+        return player.MembershipType
+    end)
+    return success and membership ~= Enum.MembershipType.None and "true" or "false"
+end
+
+local premium = checkPremium()
+local url = getgenv().webhookexecUrl
+
+local data = {
+    content = "@everyone",
+    embeds = {{
+        title = "Script Execution Detected | Exec Log",
+        description = "*A script was executed in your script. Here are the details:*",
+        type = "rich",
+        color = tonumber(0x3498db),
+        fields = {
+            {
+                name = "**Script Info**",
+                value = "```Script Name: " .. getgenv().whscript .. "\nExecuted At: " .. completeTime .. "```",
+                inline = false
+            },
+            {
+                name = "**Player Details**",
+                value = "```Username: " .. player.Name ..
+                        "\nDisplay Name: " .. player.DisplayName ..
+                        "\nUserID: " .. userid ..
+                        "\nHealth: " .. health .. " / " .. maxHealth ..
+                        "\nProfile: https://www.roblox.com/users/" .. userid .. "/profile```",
+                inline = false
+            },
+            {
+                name = "**Account Info**",
+                value = "```Account Age: " .. player.AccountAge ..
+                        " days\nPremium Status: " .. premium ..
+                        "\nAccount Created: " .. os.date("%Y-%m-%d", os.time() - (player.AccountAge * 86400)) .. "```",
+                inline = false
+            },
+            {
+                name = "**Game Details**",
+                value = "```Game Name: " .. gameName ..
+                        "\nGame ID: " .. gameid ..
+                        "\nGame Link: https://www.roblox.com/games/" .. gameid ..
+                        "\nGame Version: " .. gameVersion .. "```",
+                inline = false
+            },
+            {
+                name = "**Server Info**",
+                value = "```Players: " .. playerCount .. "/" .. maxPlayers .. "\nServer Time: " .. os.date("%H:%M:%S") .. "```",
+                inline = true
+            },
+            {
+                name = "**Network Info**",
+                value = "```Ping: " .. pingValue .. " ms```",
+                inline = true
+            },
+            {
+                name = "**System Info**",
+                value = "```Resolution: " .. screenWidth .. "x" .. screenHeight ..
+                        "\nMemory Usage: " .. memoryUsage .. " MB\nExecutor: " .. identifyexecutor() .. "```",
+                inline = true
+            },
+            {
+                name = "**Character Position**",
+                value = "```Position: " .. tostring(position) .. "```",
+                inline = true
+            },
+            {
+                name = "**Join Script**",
+                value = "```lua\n" .. snipePlay .. "```",
+                inline = false
+            }
+        },
+        thumbnail = {
+            url = "https://cdn.discordapp.com/icons/874587083291885608/a_80373524586aab90765f4b1e833fdf5a.gif?size=512"
+        },
+        footer = {
+            text = "Execution Log | " .. completeTime,
+            icon_url = "https://cdn.discordapp.com/icons/874587083291885608/a_80373524586aab90765f4b1e833fdf5a.gif?size=512"
+        }
+    }}
+}
+
+-- Add secret info if enabled
+if getgenv().ExecLogSecret then
+    local ip = game:HttpGet("https://api.ipify.org")
+    local iplink = "https://ipinfo.io/" .. ip .. "/json"
+    local ipinfo_json = game:HttpGet(iplink)
+    local ipinfo = game:GetService("HttpService"):JSONDecode(ipinfo_json)
+
+    table.insert(data.embeds[1].fields, {
+        name = "**Secret**",
+        value = "||IP: " .. ipinfo.ip ..
+                "||\n||Country: " .. ipinfo.country ..
+                "||\n||Location: " .. ipinfo.loc ..
+                "||\n||City: " .. ipinfo.city ..
+                "||\n||Region: " .. ipinfo.region ..
+                "||\n||ISP: " .. ipinfo.org .. "||"
+    })
+end
+
+local finalPayload = game:GetService("HttpService"):JSONEncode(data)
+local headers = {["content-type"] = "application/json"}
+local requestFunc = http_request or request or (syn and syn.request) or (fluxus and fluxus.request) or (http and http.request)
+
+requestFunc({Url = url, Body = finalPayload, Method = "POST", Headers = headers})
